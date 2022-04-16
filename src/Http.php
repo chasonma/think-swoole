@@ -107,7 +107,7 @@ class Http extends Server
     {
         // 设置参数
         if (!empty($option)) {
-            $this->swoole->set($option);
+            $this->swoole->set(checkOptions($option));
         }
 
         foreach ($this->event as $event) {
@@ -135,6 +135,14 @@ class Http extends Server
      */
     public function onWorkerStart($server, $worker_id)
     {
+        // 如果开启了APC或OPcache，还需要刷新缓存后，平滑重启才会生效。
+        if (extension_loaded('apc')) {
+            apc_clear_cache();
+        }
+        if (extension_loaded('Zend OPcache')) {
+            opcache_reset();
+        }
+
         // 应用实例化
         $this->app       = new Application($this->appPath);
         $this->lastMtime = time();
